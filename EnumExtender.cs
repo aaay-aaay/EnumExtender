@@ -302,6 +302,7 @@ namespace PastebinMachine.EnumExtender
             AddDeclaration(typeof(Menu.MenuScene.SceneID), "DynamicValue");
             ExtendEnumsAgain();
             Debug.Log("1 " + Enum.Parse(typeof(Menu.MenuScene.SceneID), "DynamicValue"));
+            // new List<Menu.MenuScene.SceneID>((Menu.MenuScene.SceneID[])Enum.GetValues(typeof(Menu.MenuScene.SceneID)));
             
             Debug.Log(":beehappyloaf:");
 		}
@@ -330,6 +331,51 @@ namespace PastebinMachine.EnumExtender
 					obj = Enum.ToObject(type, obj.GetType().GetField("value__", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).GetValue(obj));
 				}
 			}
+            else if (obj.GetType().IsArray && obj.GetType().GetElementType().IsEnum)
+            {
+                Array asArray = obj as Array;
+                Type arrayType = obj.GetType();
+                Type elementType = arrayType.GetElementType();
+                Type converted;
+                if (EnumExtender.enums.TryGetValue(elementType, out converted))
+                {
+                    int[] lengths = new int[asArray.Rank];
+                    int[] lowerBounds = new int[asArray.Rank];
+                    for (int i = 0; i < asArray.Rank; i++)
+                    {
+                        lengths[i] = asArray.GetLength(i);
+                        lowerBounds[i] = asArray.GetLowerBound(i);
+                    }
+                    Array newArr = Array.CreateInstance(converted, lengths, lowerBounds);
+                    int[] indices = new int[newArr.Rank];
+                    for (int i = 0; i < newArr.Rank; i++)
+                    {
+                        indices[i] = lowerBounds[i];
+                    }
+                    while (true)
+                    {
+                        newArr.SetValue(ValueHook(asArray.GetValue(indices)), indices);
+                        int i = 0;
+                        while (true)
+                        {
+                            if (i == indices.Length)
+                            {
+                                goto end;
+                            }
+                            indices[i]++;
+                            if (indices[i] >= lowerBounds[i] + lengths[i])
+                            {
+                                indices[i] = 0;
+                                i++;
+                            }
+                            else
+                                break;
+                        }
+                    }
+                    end:
+                    obj = newArr;
+                }
+            }
 			return obj;
 		}
 
@@ -370,6 +416,59 @@ namespace PastebinMachine.EnumExtender
 						}
 					}
 				}
+                else if (obj.GetType().IsArray && obj.GetType().GetElementType().IsEnum)
+                {
+                    Array asArray = obj as Array;
+                    Type arrayType = obj.GetType();
+                    Type elementType = arrayType.GetElementType();
+                    Type converted = null;
+                    // if (EnumExtender.enums.TryGetValue(elementType, out converted))
+                    foreach (KeyValuePair<Type, Type> keyValuePair in EnumExtender.enums)
+                    {
+                        if (keyValuePair.Value == elementType)
+                        {
+                            converted = keyValuePair.Key;
+                        }
+                    }
+                    if (converted != null)
+                    {
+                        int[] lengths = new int[asArray.Rank];
+                        int[] lowerBounds = new int[asArray.Rank];
+                        for (int i = 0; i < asArray.Rank; i++)
+                        {
+                            lengths[i] = asArray.GetLength(i);
+                            lowerBounds[i] = asArray.GetLowerBound(i);
+                        }
+                        Array newArr = Array.CreateInstance(converted, lengths, lowerBounds);
+                        int[] indices = new int[newArr.Rank];
+                        for (int i = 0; i < newArr.Rank; i++)
+                        {
+                            indices[i] = lowerBounds[i];
+                        }
+                        while (true)
+                        {
+                            newArr.SetValue(ValueHook(asArray.GetValue(indices)), indices);
+                            int i = 0;
+                            while (true)
+                            {
+                                if (i == indices.Length)
+                                {
+                                    goto end;
+                                }
+                                indices[i]++;
+                                if (indices[i] >= lowerBounds[i] + lengths[i])
+                                {
+                                    indices[i] = 0;
+                                    i++;
+                                }
+                                else
+                                    break;
+                            }
+                        }
+                        end:
+                        obj = newArr;
+                    }
+                }
 				result = obj;
 			}
 			return result;
