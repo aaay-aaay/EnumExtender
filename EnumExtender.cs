@@ -532,7 +532,7 @@ namespace PastebinMachine.EnumExtender
 		public string updateURL = "http://beestuff.pythonanywhere.com/audb/api/mods/0/1";
 
 		// Token: 0x04000009 RID: 9
-		public int version = 15;
+		public int version = 16;
 
 		// Token: 0x0400000A RID: 10
 		public string keyE = "AQAB";
