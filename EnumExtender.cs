@@ -161,14 +161,22 @@ namespace PastebinMachine.EnumExtender
 					{
 						enumBuilder = (EnumBuilder)type2;
 					}
-					Type underlyingType = Enum.GetUnderlyingType(enumValue.type);
-					object obj3 = Convert.ChangeType(0, underlyingType);
-					while (EnumExtender.enumValues[enumValue.type].Contains(obj3))
-					{
-						obj3 = Convert.ChangeType((long)Convert.ChangeType(obj3, typeof(long)) + 1L, underlyingType);
-					}
-					enumBuilder.DefineLiteral(enumValue.name, obj3);
-					EnumExtender.enumValues[enumValue.type].Add(obj3);
+                    object obj3;
+                    if (enumBuilder.GetField(enumValue.name) == null)
+                    {
+                        Type underlyingType = Enum.GetUnderlyingType(enumValue.type);
+                        obj3 = Convert.ChangeType(0, underlyingType);
+                        while (EnumExtender.enumValues[enumValue.type].Contains(obj3))
+                        {
+                            obj3 = Convert.ChangeType((long)Convert.ChangeType(obj3, typeof(long)) + 1L, underlyingType);
+                        }
+                        enumBuilder.DefineLiteral(enumValue.name, obj3);
+                        EnumExtender.enumValues[enumValue.type].Add(obj3);
+                    }
+                    else
+                    {
+                        obj3 = enumBuilder.GetField(enumValue.name).GetRawConstantValue();
+                    }
 					if (list2 != null) list2.Add(new KeyValuePair<IReceiveEnumValue, object>(enumValue.receiver, Enum.ToObject(enumValue.type, obj3)));
 				}
 				catch (Exception ex)
@@ -534,7 +542,7 @@ namespace PastebinMachine.EnumExtender
 		public string updateURL = "http://beestuff.pythonanywhere.com/audb/api/mods/0/1";
 
 		// Token: 0x04000009 RID: 9
-		public int version = 16;
+		public int version = 17;
 
 		// Token: 0x0400000A RID: 10
 		public string keyE = "AQAB";
