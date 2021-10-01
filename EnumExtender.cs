@@ -24,6 +24,7 @@ namespace PastebinMachine.EnumExtender
 		// Token: 0x06000002 RID: 2 RVA: 0x00002064 File Offset: 0x00000264
 		public override void OnLoad()
 		{
+            // Debug.Log("Excessive debug logging!");
 			List<Type> list = new List<Type>();
 			List<KeyValuePair<IReceiveEnumValue, object>> list2 = new List<KeyValuePair<IReceiveEnumValue, object>>();
 			EnumExtender.asm = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName("EnumExtender_Generated"), AssemblyBuilderAccess.RunAndSave);
@@ -74,6 +75,7 @@ namespace PastebinMachine.EnumExtender
 						if (typ.IsEnum)
 						{
                             EnumExtender.declarations.Add(new EnumValue(fieldInfo.FieldType, fieldInfo.Name, null, new FieldWrapper(fieldInfo)));
+                            // Debug.Log("[EE DEBUG]" + type.Assembly + type.FullName + fieldInfo.FieldType + fieldInfo.Name);
 						}
                         else if (typ.IsAssignableFrom(typeof(Delegate)))
                         {
