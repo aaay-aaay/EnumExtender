@@ -137,6 +137,7 @@ namespace PastebinMachine.EnumExtender
         
         public static void ExtendEnums(List<EnumValue> decls, Dictionary<Type, Type> enums, List<KeyValuePair<IReceiveEnumValue, object>> list2)
         {
+            Dictionary<Type, Dictionary<string, object>> values = new Dictionary<Type, Dictionary<string, object>>();
 			foreach (EnumValue enumValue in decls)
 			{
 				try
@@ -149,12 +150,14 @@ namespace PastebinMachine.EnumExtender
                         type2 = enumBuilder;
 						enums[enumValue.type] = enumBuilder;
 						EnumExtender.enumValues[enumValue.type] = new List<object>();
+                        values[enumValue.type] = new Dictionary<string, object>();
 						foreach (object obj in Enum.GetValues(enumValue.type))
 						{
 							object obj2 = Convert.ChangeType(obj, Type.GetTypeCode(Enum.GetUnderlyingType(enumValue.type)));
 							string name = Enum.GetName(enumValue.type, obj2);
 							enumBuilder.DefineLiteral(name, obj2);
 							EnumExtender.enumValues[enumValue.type].Add(obj2);
+                            values[enumValue.type][name] = obj2;
 						}
 					}
 					else
@@ -162,7 +165,7 @@ namespace PastebinMachine.EnumExtender
 						enumBuilder = (EnumBuilder)type2;
 					}
                     object obj3;
-                    if (enumBuilder.GetField(enumValue.name) == null)
+                    if (!values[enumValue.type].ContainsKey(enumValue.name))
                     {
                         Type underlyingType = Enum.GetUnderlyingType(enumValue.type);
                         obj3 = Convert.ChangeType(0, underlyingType);
@@ -171,11 +174,12 @@ namespace PastebinMachine.EnumExtender
                             obj3 = Convert.ChangeType((long)Convert.ChangeType(obj3, typeof(long)) + 1L, underlyingType);
                         }
                         enumBuilder.DefineLiteral(enumValue.name, obj3);
+                        values[enumValue.type][enumValue.name] = obj3;
                         EnumExtender.enumValues[enumValue.type].Add(obj3);
                     }
                     else
                     {
-                        obj3 = enumBuilder.GetField(enumValue.name).GetRawConstantValue();
+                        obj3 = values[enumValue.type][enumValue.name];
                     }
 					if (list2 != null) list2.Add(new KeyValuePair<IReceiveEnumValue, object>(enumValue.receiver, Enum.ToObject(enumValue.type, obj3)));
 				}
@@ -542,7 +546,7 @@ namespace PastebinMachine.EnumExtender
 		public string updateURL = "http://beestuff.pythonanywhere.com/audb/api/mods/0/1";
 
 		// Token: 0x04000009 RID: 9
-		public int version = 17;
+		public int version = 18;
 
 		// Token: 0x0400000A RID: 10
 		public string keyE = "AQAB";
