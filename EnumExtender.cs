@@ -25,63 +25,102 @@ namespace PastebinMachine.EnumExtender
 		// Token: 0x06000002 RID: 2 RVA: 0x00002064 File Offset: 0x00000264
 		public override void OnLoad()
 		{
+            EnsureInit();
+            CheckAllAssemblies();
+        }
+
+        public static bool initDone;
+
+        public static void EnsureInit()
+        {
+            if (initDone) return;
+            initDone = true;
             if (File.Exists("enumExtLog.txt"))
             {
                 File.Delete("enumExtLog.txt");
             }
             // Debug.Log("Excessive debug logging!");
-			List<Type> list = new List<Type>();
-			List<KeyValuePair<IReceiveEnumValue, object>> list2 = new List<KeyValuePair<IReceiveEnumValue, object>>();
-			EnumExtender.asm = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName("EnumExtender_Generated"), AssemblyBuilderAccess.RunAndSave);
-			EnumExtender.module = EnumExtender.asm.DefineDynamicModule("EnumExtender_Generated", "EnumExtender_Generated.dll");
-			foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+            CreateModule();
+			CheckAllAssemblies();
+			try
 			{
-				try
+				if (EnumExtender.LoadCallback != null)
 				{
-					foreach (Type type in assembly.GetTypes())
-					{
-						if (type.Name.StartsWith("EnumExt_"))
-						{
-							if (assembly.FullName == "Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null")
-							{
-								Debug.LogError("WARNING - EnumExt_ type in game .dll (Assembly-CSharp). This does not work and the type will be ignored.");
-								Debug.LogError("Type name - " + type.Name);
-							}
-							else
-							{
-								list.Add(type);
-							}
-						}
-					}
-				}
-				catch (Exception ex)
-				{
-					Debug.LogError(string.Concat(new object[]
-					{
-						"Failed loading enums from assembly ",
-						assembly.FullName,
-						": ",
-						ex
-					}));
+					EnumExtender.LoadCallback();
 				}
 			}
-			foreach (Type type in list)
+			catch (Exception ex)
 			{
-				try
-				{
-					foreach (FieldInfo fieldInfo in type.GetFields(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
-					{
-						if (!fieldInfo.IsStatic)
-						{
-							Debug.LogError(type.FullName + "." + fieldInfo.Name + " contains an enum type, but is not static so it cannot be manipulated. It should be fixed, or moved out of the EnumExt_ class.");
-							return;
-						}
+				Debug.LogError("EnumExtender - Error in LoadCallback: " + ex);
+			}
+			ExtendEnumsAgain();
+            PerformDMHooks();
+            EnumExtender.declarations.Clear();
+            // TestBehaviour.Test();
+        }
+
+        public static List<Assembly> assemblies = new List<Assembly>();
+
+        public static void CreateModule()
+        {
+            if (asm == null)
+            {
+                EnumExtender.asm = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName("EnumExtender_Generated"), AssemblyBuilderAccess.RunAndSave);
+                EnumExtender.module = EnumExtender.asm.DefineDynamicModule("EnumExtender_Generated", "EnumExtender_Generated.dll");
+            }
+        }
+
+        public static void CheckAssembly(Assembly asm)
+        {
+            if (assemblies.Contains(asm))
+                return;
+            assemblies.Add(asm);
+			List<Type> types = new List<Type>();
+            try
+            {
+                foreach (Type type in asm.GetTypes())
+                {
+                    if (type.Name.StartsWith("EnumExt_"))
+                    {
+                        if (asm.FullName == "Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null")
+                        {
+                            Debug.LogError("WARNING - EnumExt_ type in game .dll (Assembly-CSharp). This does not work and the type will be ignored.");
+                            Debug.LogError("Type name - " + type.Name);
+                        }
+                        else
+                        {
+                            types.Add(type);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError(string.Concat(new object[]
+                {
+                    "Failed loading enums from assembly ",
+                    asm.FullName,
+                    ": ",
+                    ex
+                }));
+            }
+            foreach (Type type in types)
+            {
+                try
+                {
+                    foreach (FieldInfo fieldInfo in type.GetFields(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
+                    {
+                        if (!fieldInfo.IsStatic)
+                        {
+                            Debug.LogError(type.FullName + "." + fieldInfo.Name + " contains an enum type, but is not static so it cannot be manipulated. It should be fixed, or moved out of the EnumExt_ class.");
+                            return;
+                        }
                         Type typ = fieldInfo.FieldType;
-						if (typ.IsEnum)
-						{
+                        if (typ.IsEnum)
+                        {
                             EnumExtender.declarations.Add(new EnumValue(fieldInfo.FieldType, fieldInfo.Name, null, new FieldWrapper(fieldInfo)));
                             // Debug.Log("[EE DEBUG]" + type.Assembly + type.FullName + fieldInfo.FieldType + fieldInfo.Name);
-						}
+                        }
                         else if (typ.IsAssignableFrom(typeof(Delegate)))
                         {
                             MethodInfo invoke = typ.GetMethod("Invoke");
@@ -103,41 +142,21 @@ namespace PastebinMachine.EnumExtender
                         {
                             Debug.LogError(type.FullName + "." + fieldInfo.Name + " does not contain an enum type or delegate type. It should be fixed, or moved out of the EnumExt_ class.");
                         }
-					}
-				}
-				catch (Exception ex)
-				{
-					Debug.LogError("EnumExtender - Error while searching fields: " + ex);
-				}
-			}
-			try
-			{
-				if (EnumExtender.LoadCallback != null)
-				{
-					EnumExtender.LoadCallback();
-				}
-			}
-			catch (Exception ex)
-			{
-				Debug.LogError("EnumExtender - Error in LoadCallback: " + ex);
-			}
-			ExtendEnums(EnumExtender.declarations, EnumExtender.enums, list2);
-			Dictionary<Type, Type> dictionary = new Dictionary<Type, Type>();
-			foreach (KeyValuePair<Type, Type> keyValuePair in EnumExtender.enums)
-			{
-				EnumBuilder enumBuilder2 = keyValuePair.Value as EnumBuilder;
-				dictionary[keyValuePair.Key] = enumBuilder2.CreateType();
-			}
-			EnumExtender.enums = dictionary;
-			foreach (KeyValuePair<IReceiveEnumValue, object> keyValuePair2 in list2)
-			{
-				IReceiveEnumValue key = keyValuePair2.Key;
-				object obj = keyValuePair2.Value;
-				key.ReceiveValue(obj);
-			}
-            PerformDMHooks();
-            EnumExtender.declarations.Clear();
-            // TestBehaviour.Test();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError("EnumExtender - Error while searching fields: " + ex);
+                }
+            }
+        }
+
+        public static void CheckAllAssemblies()
+        {
+			foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                CheckAssembly(assembly);
+            }
         }
 
         public static void EnumExtLog(string text)
@@ -232,16 +251,27 @@ namespace PastebinMachine.EnumExtender
             Debug.Log(EnumExtender.declarations.Count);
             */
             Dictionary<Type, Type> newEnums = new Dictionary<Type, Type>();
-            ExtendEnums(EnumExtender.declarations, newEnums, null);
+            List<KeyValuePair<IReceiveEnumValue, object>> list2 = new List<KeyValuePair<IReceiveEnumValue, object>>();
+            ExtendEnums(EnumExtender.declarations, newEnums, list2);
             foreach (KeyValuePair<Type, Type> keyValuePair in newEnums)
             {
                 EnumExtender.enums[keyValuePair.Key] = (keyValuePair.Value as EnumBuilder).CreateType();
             }
             EnumExtender.declarations.Clear();
+			foreach (KeyValuePair<IReceiveEnumValue, object> keyValuePair2 in list2)
+			{
+				IReceiveEnumValue key = keyValuePair2.Key;
+				object obj = keyValuePair2.Value;
+				key.ReceiveValue(obj);
+			}
         }
+
+        public static bool hooksDone = false;
 
         public static void PerformDMHooks()
         {
+            if (hooksDone) return;
+            hooksDone = true;
 			foreach (MethodInfo methodInfo in typeof(Enum).GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public))
 			{
 				if (methodInfo.GetMethodBody() != null)
@@ -555,7 +585,7 @@ namespace PastebinMachine.EnumExtender
 
 		public string updateURL = "http://beestuff.pythonanywhere.com/audb/api/mods/0/1";
 
-		public int version = 20;
+		public int version = 21;
 
 		public string keyE = "AQAB";
 
