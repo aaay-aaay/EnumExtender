@@ -5,6 +5,7 @@ using System.Reflection.Emit;
 using MonoMod.RuntimeDetour;
 using Partiality.Modloader;
 using UnityEngine;
+using System.IO;
 
 using System.Diagnostics;
 using Debug = UnityEngine.Debug;
@@ -24,6 +25,10 @@ namespace PastebinMachine.EnumExtender
 		// Token: 0x06000002 RID: 2 RVA: 0x00002064 File Offset: 0x00000264
 		public override void OnLoad()
 		{
+            if (File.Exists("enumExtLog.txt"))
+            {
+                File.Delete("enumExtLog.txt");
+            }
             // Debug.Log("Excessive debug logging!");
 			List<Type> list = new List<Type>();
 			List<KeyValuePair<IReceiveEnumValue, object>> list2 = new List<KeyValuePair<IReceiveEnumValue, object>>();
@@ -135,8 +140,14 @@ namespace PastebinMachine.EnumExtender
             // TestBehaviour.Test();
         }
         
+        public static void EnumExtLog(string text)
+        {
+            File.AppendAllText("enumExtLog.txt", text + Environment.NewLine);
+        }
+        
         public static void ExtendEnums(List<EnumValue> decls, Dictionary<Type, Type> enums, List<KeyValuePair<IReceiveEnumValue, object>> list2)
         {
+            EnumExtLog("Extension #" + extendCounter + " with " + decls.Count + " declarations");
             Dictionary<Type, Dictionary<string, object>> values = new Dictionary<Type, Dictionary<string, object>>();
 			foreach (EnumValue enumValue in decls)
 			{
@@ -146,6 +157,7 @@ namespace PastebinMachine.EnumExtender
 					EnumBuilder enumBuilder;
 					if (!enums.TryGetValue(enumValue.type, out type2))
 					{
+                        EnumExtLog("  [DEBUG] Create enum for " + enumValue.type.ToString());
 						enumBuilder = EnumExtender.module.DefineEnum("EnumExtender_" + extendCounter + "." + enumValue.type.Assembly.GetName().Name.Replace("-", "") + "." + enumValue.type.FullName.Replace("+", ""), TypeAttributes.Public, Enum.GetUnderlyingType(enumValue.type));
                         type2 = enumBuilder;
 						enums[enumValue.type] = enumBuilder;
@@ -153,6 +165,7 @@ namespace PastebinMachine.EnumExtender
                         values[enumValue.type] = new Dictionary<string, object>();
 						foreach (object obj in Enum.GetValues(enumValue.type))
 						{
+                            EnumExtLog("    [DEBUG] Add existing value " + obj);
 							object obj2 = Convert.ChangeType(obj, Type.GetTypeCode(Enum.GetUnderlyingType(enumValue.type)));
 							string name = Enum.GetName(enumValue.type, obj2);
 							enumBuilder.DefineLiteral(name, obj2);
@@ -162,32 +175,39 @@ namespace PastebinMachine.EnumExtender
 					}
 					else
 					{
+                        EnumExtLog("  [DEBUG] Already made enum for " + enumValue.type.ToString());
 						enumBuilder = (EnumBuilder)type2;
 					}
                     object obj3;
                     if (!values[enumValue.type].ContainsKey(enumValue.name))
                     {
+                        EnumExtLog("  Add new value: " + enumValue.name);
                         Type underlyingType = Enum.GetUnderlyingType(enumValue.type);
                         obj3 = Convert.ChangeType(0, underlyingType);
                         while (EnumExtender.enumValues[enumValue.type].Contains(obj3))
                         {
                             obj3 = Convert.ChangeType((long)Convert.ChangeType(obj3, typeof(long)) + 1L, underlyingType);
                         }
+                        EnumExtLog("  Numerical value: " + obj3);
                         enumBuilder.DefineLiteral(enumValue.name, obj3);
                         values[enumValue.type][enumValue.name] = obj3;
                         EnumExtender.enumValues[enumValue.type].Add(obj3);
                     }
                     else
                     {
+                        EnumExtLog("  Duplicate of existing value: " + enumValue.name);
                         obj3 = values[enumValue.type][enumValue.name];
+                        EnumExtLog("  Numerical value: " + obj3);
                     }
 					if (list2 != null) list2.Add(new KeyValuePair<IReceiveEnumValue, object>(enumValue.receiver, Enum.ToObject(enumValue.type, obj3)));
 				}
 				catch (Exception ex)
 				{
 					Debug.LogError("EnumExtender - Error while extending enums: " + ex);
+                    EnumExtLog("EnumExtender - Error while extending enums: " + ex);
 				}
 			}
+            EnumExtLog("Finish extension #" + extendCounter);
             extendCounter++;
         }
         
@@ -546,7 +566,7 @@ namespace PastebinMachine.EnumExtender
 		public string updateURL = "http://beestuff.pythonanywhere.com/audb/api/mods/0/1";
 
 		// Token: 0x04000009 RID: 9
-		public int version = 18;
+		public int version = 20;
 
 		// Token: 0x0400000A RID: 10
 		public string keyE = "AQAB";
