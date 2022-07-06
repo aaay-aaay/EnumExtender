@@ -26,19 +26,10 @@ namespace PastebinMachine.EnumExtender
 		public override void OnLoad()
 		{
             EnsureInit();
-            CheckAllAssemblies();
         }
-
-        public static bool initDone;
 
         public static void EnsureInit()
         {
-            if (initDone) return;
-            initDone = true;
-            if (File.Exists("enumExtLog.txt"))
-            {
-                File.Delete("enumExtLog.txt");
-            }
             // Debug.Log("Excessive debug logging!");
             CreateModule();
 			CheckAllAssemblies();
@@ -164,8 +155,15 @@ namespace PastebinMachine.EnumExtender
             File.AppendAllText("enumExtLog.txt", text + Environment.NewLine);
         }
 
+        public static bool loggingInit = false;
+
         public static void ExtendEnums(List<EnumValue> decls, Dictionary<Type, Type> enums, List<KeyValuePair<IReceiveEnumValue, object>> list2)
         {
+            if (File.Exists("enumExtLog.txt") && !loggingInit)
+            {
+                File.Delete("enumExtLog.txt");
+                loggingInit = true;
+            }
             EnumExtLog("Extension #" + extendCounter + " with " + decls.Count + " declarations");
             Dictionary<Type, Dictionary<string, object>> values = new Dictionary<Type, Dictionary<string, object>>();
 			foreach (EnumValue enumValue in decls)
@@ -585,7 +583,7 @@ namespace PastebinMachine.EnumExtender
 
 		public string updateURL = "http://beestuff.pythonanywhere.com/audb/api/mods/0/1";
 
-		public int version = 21;
+		public int version = 22;
 
 		public string keyE = "AQAB";
 
