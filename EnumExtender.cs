@@ -139,12 +139,12 @@ namespace PastebinMachine.EnumExtender
             EnumExtender.declarations.Clear();
             // TestBehaviour.Test();
         }
-        
+
         public static void EnumExtLog(string text)
         {
             File.AppendAllText("enumExtLog.txt", text + Environment.NewLine);
         }
-        
+
         public static void ExtendEnums(List<EnumValue> decls, Dictionary<Type, Type> enums, List<KeyValuePair<IReceiveEnumValue, object>> list2)
         {
             EnumExtLog("Extension #" + extendCounter + " with " + decls.Count + " declarations");
@@ -210,7 +210,7 @@ namespace PastebinMachine.EnumExtender
             EnumExtLog("Finish extension #" + extendCounter);
             extendCounter++;
         }
-        
+
         public static void AddDeclaration(Type enm, string name)
         {
             /*
@@ -222,7 +222,7 @@ namespace PastebinMachine.EnumExtender
             */
             EnumExtender.declarations.Add(new EnumValue(enm, name, null, new Nope()));
         }
-        
+
         public static void ExtendEnumsAgain()
         {
             /*
@@ -239,7 +239,7 @@ namespace PastebinMachine.EnumExtender
             }
             EnumExtender.declarations.Clear();
         }
-        
+
         public static void PerformDMHooks()
         {
 			foreach (MethodInfo methodInfo in typeof(Enum).GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public))
@@ -311,7 +311,7 @@ namespace PastebinMachine.EnumExtender
 				}
 			}
         }
-        
+
         public static void Test()
         {
             Debug.Log(":beeloaf:");
@@ -324,20 +324,20 @@ namespace PastebinMachine.EnumExtender
             /*
             //Debug.Log("1 " + EnumExt_Test.TestValue);
             //Debug.Log("2 " + Enum.Parse(typeof(TestEnum), "TestValue"));
-            
+
             AddDeclaration(typeof(TestEnum), "DynamicValueOne");
             AddDeclaration(typeof(TestEnum), "DynamicValueTwo");
             ExtendEnumsAgain();
-            
+
             Debug.Log("3 " + Enum.Parse(typeof(TestEnum), "DynamicValueOne"));
             Debug.Log("4 " + Enum.Parse(typeof(TestEnum), "DynamicValueTwo"));
             */
-            
+    
             AddDeclaration(typeof(Menu.MenuScene.SceneID), "DynamicValue");
             ExtendEnumsAgain();
             Debug.Log("1 " + Enum.Parse(typeof(Menu.MenuScene.SceneID), "DynamicValue"));
             // new List<Menu.MenuScene.SceneID>((Menu.MenuScene.SceneID[])Enum.GetValues(typeof(Menu.MenuScene.SceneID)));
-            
+    
             Debug.Log(":beehappyloaf:");
 		}
 
@@ -507,7 +507,7 @@ namespace PastebinMachine.EnumExtender
 			}
 			return result;
 		}
-        
+
         public static T ConvertEnum<T>(Enum frm) where T : struct, IComparable, IConvertible, IFormattable
         {
             if (frm == null) return default(T);
@@ -522,7 +522,7 @@ namespace PastebinMachine.EnumExtender
             }
             return GetDefault<T>();
         }
-        
+
         public static T GetDefault<T>() where T : struct, IComparable, IConvertible, IFormattable
         {
             Type underlyingType = Enum.GetUnderlyingType(typeof(T));
@@ -539,63 +539,38 @@ namespace PastebinMachine.EnumExtender
             return (T)Enum.ToObject(typeof(T), Convert.ChangeType(minValue, underlyingType));
         }
 
-		// Token: 0x14000001 RID: 1
-		// (add) Token: 0x06000006 RID: 6 RVA: 0x00002C8C File Offset: 0x00000E8C
-		// (remove) Token: 0x06000007 RID: 7 RVA: 0x00002CA3 File Offset: 0x00000EA3
 		public static event EnumExtender.EnumExtCallback LoadCallback;
 
-		// Token: 0x04000001 RID: 1
 		public static AssemblyBuilder asm;
 
-		// Token: 0x04000002 RID: 2
 		public static ModuleBuilder module;
 
-		// Token: 0x04000003 RID: 3
 		public static List<EnumValue> declarations = new List<EnumValue>();
 
-		// Token: 0x04000004 RID: 4
 		public static Dictionary<Type, Type> enums = new Dictionary<Type, Type>();
 
-		// Token: 0x04000005 RID: 5
 		public static Dictionary<Type, List<object>> enumValues = new Dictionary<Type, List<object>>();
 
-		// Token: 0x04000006 RID: 6
 		public static EnumExtender instance;
 
-		// Token: 0x04000008 RID: 8
 		public string updateURL = "http://beestuff.pythonanywhere.com/audb/api/mods/0/1";
 
-		// Token: 0x04000009 RID: 9
 		public int version = 20;
 
-		// Token: 0x0400000A RID: 10
 		public string keyE = "AQAB";
 
-		// Token: 0x0400000B RID: 11
 		public string keyN = "yu7XMmICrzuavyZRGWoknFIbJX4N4zh3mFPOyfzmQkil2axVIyWx5ogCdQ3OTdSZ0xpQ3yiZ7zqbguLu+UWZMfLOBKQZOs52A9OyzeYm7iMALmcLWo6OdndcMc1Uc4ZdVtK1CRoPeUVUhdBfk2xwjx+CvZUlQZ26N1MZVV0nq54IOEJzC9qQnVNgeeHxO1lRUTdg5ZyYb7I2BhHfpDWyTvUp6d5m6+HPKoalC4OZSfmIjRAi5UVDXNRWn05zeT+3BJ2GbKttwvoEa6zrkVuFfOOe9eOAWO3thXmq9vJLeF36xCYbUJMkGR2M5kDySfvoC7pzbzyZ204rXYpxxXyWPP5CaaZFP93iprZXlSO3XfIWwws+R1QHB6bv5chKxTZmy/Imo4M3kNLo5B2NR/ZPWbJqjew3ytj0A+2j/RVwV9CIwPlN4P50uwFm+Mr0OF2GZ6vU0s/WM7rE78+8Wwbgcw6rTReKhVezkCCtOdPkBIOYv3qmLK2S71NPN2ulhMHD9oj4t0uidgz8pNGtmygHAm45m2zeJOhs5Q/YDsTv5P7xD19yfVcn5uHpSzRIJwH5/DU1+aiSAIRMpwhF4XTUw73+pBujdghZdbdqe2CL1juw7XCa+XfJNtsUYrg+jPaCEUsbMuNxdFbvS0Jleiu3C8KPNKDQaZ7QQMnEJXeusdU=";
 
-		// Token: 0x02000003 RID: 3
-		// (Invoke) Token: 0x0600000B RID: 11
 		public delegate void EnumExtCallback();
 
-		// Token: 0x02000004 RID: 4
-		// (Invoke) Token: 0x0600000F RID: 15
 		public delegate TResult O<TResult>();
 
-		// Token: 0x02000005 RID: 5
-		// (Invoke) Token: 0x06000013 RID: 19
 		public delegate TResult O<TResult, T1>(T1 t1);
 
-		// Token: 0x02000006 RID: 6
-		// (Invoke) Token: 0x06000017 RID: 23
 		public delegate TResult O<TResult, T1, T2>(T1 t1, T2 t2);
 
-		// Token: 0x02000007 RID: 7
-		// (Invoke) Token: 0x0600001B RID: 27
 		public delegate TResult O<TResult, T1, T2, T3>(T1 t1, T2 t2, T3 t3);
 
-		// Token: 0x02000008 RID: 8
-		// (Invoke) Token: 0x0600001F RID: 31
 		public delegate TResult O<TResult, T1, T2, T3, T4>(T1 t1, T2 t2, T3 t3, T4 t4);
         
         public static int extendCounter;
